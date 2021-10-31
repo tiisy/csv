@@ -1,18 +1,18 @@
 {
-    "name": "lazy/csv",
-    "description": "Lazy CSV handling",
+    "name": "lazier/csv",
+    "description": "Lazier CSV handling",
     "type": "library",
     "keywords": ["csv"],
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Lazy\\Csv\\": "./"
+            "Lazier\\Csv\\": "./"
         }
     },
     "authors": [
         {
-            "name": "Lazy contributors",
-            "homepage": "https://github.com/phplazy/lazy/contributors"
+            "name": "Lazier Components contributors",
+            "homepage": "https://github.com/lazierphp/lazier/contributors"
         }
     ],
     "require": {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Lazy\Csv;
+namespace Lazier\Csv;
 
 use Generator;
 use IteratorAggregate;

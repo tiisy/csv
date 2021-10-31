@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Lazy\Csv;
+namespace Lazier\Csv;
 
 use PHPUnit\Framework\TestCase;
 
@@ -17,7 +17,7 @@ use function unlink;
 use const DIRECTORY_SEPARATOR;
 
 /**
- * @covers \Lazy\Csv\CsvFile
+ * @covers CsvFile
  */
 class CsvFileTest extends TestCase
 {
@@ -99,7 +99,7 @@ class CsvFileTest extends TestCase
 
     public function testItCanSaveAsFile(): void
     {
-        $tempFile = tempnam(sys_get_temp_dir(), 'lazy_test_csv_');
+        $tempFile = tempnam(sys_get_temp_dir(), 'Lazier_test_csv_');
 
         assert(is_string($tempFile));
 
@@ -118,7 +118,7 @@ class CsvFileTest extends TestCase
 
     public function testItCanAddLines(): void
     {
-        $tempFile = tempnam(sys_get_temp_dir(), 'lazy_test_csv_');
+        $tempFile = tempnam(sys_get_temp_dir(), 'Lazier_test_csv_');
 
         assert(is_string($tempFile));
 

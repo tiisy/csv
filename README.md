@@ -1,7 +1,7 @@
-Lazy: CSV Component
+Lazier: CSV Component
 ===================
 
-_Lazy CSV_ provides a simple way to handle CSV files.
+_Lazier CSV_ provides a simple way to handle CSV files.
 
 
 Installation
@@ -9,7 +9,7 @@ Installation
 
 Using Composer:
 
-    composer require lazy/csv
+    composer require lazier/csv
 
 
 Usage
@@ -20,7 +20,7 @@ Example:
 ```php
 <?php
 
-use Lazy\Csv\CsvFile;
+use Lazier\Csv\CsvFile;
 
 foreach(CsvFile::createFromString("id,name\n1,foo\n2,bar") as $row => $data) {
     echo $data['id'] . ': ' . $data['name'] . PHP_EOL;
@@ -38,7 +38,7 @@ Example:
 ```php
 <?php
 
-use Lazy\Csv\CsvFile;
+use Lazier\Csv\CsvFile;
 
 foreach(CsvFile::createFromFile('example.csv', useHeaderRow: false) as $data) {
     echo $data[0] . ': ' . $data[1];
@@ -66,7 +66,7 @@ Optional _options_ for creating an instance of `CsvFile`:
 ```php
 <?php
 
-use Lazy\Csv\CsvFile;
+use Lazier\Csv\CsvFile;
 
 $csvFile = CsvFile::createFromArray([
     ['id' => '1', 'name' => 'Nina'],
