@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Lazier\Csv;
+namespace Tiisy\Csv;
 
 use Generator;
 use IteratorAggregate;
+use Traversable;
 
+use function abs;
 use function array_combine;
 use function array_keys;
 use function array_values;
+use function count;
 use function fclose;
 use function fgetcsv;
 use function file_exists;
@@ -17,6 +20,7 @@ use function file_get_contents;
 use function fopen;
 use function fputcsv;
 use function fwrite;
+use function in_array;
 use function is_resource;
 use function rewind;
 
@@ -30,12 +34,18 @@ class CsvFile implements IteratorAggregate
     private const DEFAULT_SEPARATOR = ',';
     private const DEFAULT_USE_HEADER_ROW = true;
 
+    /** @var string[]|int[]|null */
+    private ?array $headerRow = null;
+
+    /** @var array<int, array<int|string, mixed>> */
+    private array $data = [];
+
     /**
      * @param array<int, array<int|string, mixed>> $data
      * @param resource|null $resource
      */
     private function __construct(
-        private array $data = [],
+        array $data = [],
         private ?string $rawData = null,
         private $resource = null,
         private bool $parsed = false,
@@ -44,6 +54,12 @@ class CsvFile implements IteratorAggregate
         private string $enclosure = self::DEFAULT_ENCLOSURE,
         private string $escape = self::DEFAULT_ESCAPE,
     ) {
+        // To preserve header logic use `$this->add`'s logic.
+        if ($data !== [] && $this->resource === null) {
+            foreach ($data as $row) {
+                $this->add($row);
+            }
+        }
     }
 
     public function __destruct()
@@ -176,11 +192,31 @@ class CsvFile implements IteratorAggregate
         );
     }
 
+    public static function createFromGoogleSpreadsheetId(
+        string $spreadsheetId,
+        bool $useHeaderRow = self::DEFAULT_USE_HEADER_ROW,
+        string $separator = self::DEFAULT_SEPARATOR,
+        string $enclosure = self::DEFAULT_ENCLOSURE,
+        string $escape = self::DEFAULT_ESCAPE,
+    ): self {
+        return self::createFromUrl(
+            url: sprintf('https://docs.google.com/spreadsheets/d/%s/export?format=csv', $spreadsheetId),
+            useHeaderRow: $useHeaderRow,
+            separator: $separator,
+            enclosure: $enclosure,
+            escape: $escape,
+        );
+    }
+
     /**
      * @param array<int|string, string> $row
      */
     public function add(array $row): void
     {
+        if ($this->useHeaderRow === true) {
+            $this->ensureUniqueHeaders(array_keys($row));
+        }
+
         $this->data[] = $row;
     }
 
@@ -199,7 +235,7 @@ class CsvFile implements IteratorAggregate
     /**
      * @return Generator<int, array<int|string, string>>
      */
-    public function getIterator(): iterable
+    public function getIterator(): Traversable
     {
         $headerRow = null;
 
@@ -212,10 +248,22 @@ class CsvFile implements IteratorAggregate
         while ($this->parsed === false && $row = $this->getNextLine()) {
             if ($this->useHeaderRow && $headerRow === null) {
                 $headerRow = $row;
+                $this->ensureUniqueHeaders($headerRow);
                 continue;
             }
 
             if ($this->useHeaderRow) {
+                $headerCells = count($headerRow);
+                $rowCells = count($row);
+
+                if ($rowCells > $headerCells) {
+                    throw new CsvFileException('Cannot have more cells than header row.');
+                }
+
+                if ($headerCells > $rowCells) {
+                    $row += array_fill($headerCells, abs($headerCells - $rowCells), null);
+                }
+
                 $row = array_combine($headerRow, $row);
             }
 
@@ -244,7 +292,7 @@ class CsvFile implements IteratorAggregate
             if ($printedHeaderRow === false && $this->useHeaderRow) {
                 fputcsv(
                     $handle,
-                    array_keys($csvLine),
+                    $this->headerRow ?? array_keys($csvLine),
                     separator: $this->separator,
                     enclosure: $this->enclosure,
                     escape: $this->escape,
@@ -254,7 +302,7 @@ class CsvFile implements IteratorAggregate
 
             fputcsv(
                 $handle,
-                array_values($csvLine),
+                $this->preserveHeaderOrder($csvLine),
                 separator: $this->separator,
                 enclosure: $this->enclosure,
                 escape: $this->escape,
@@ -290,8 +338,48 @@ class CsvFile implements IteratorAggregate
         );
     }
 
+    /**
+     * @param string[]|int[] $headers
+     */
+    private function ensureUniqueHeaders(array $headers): void
+    {
+        if ($this->useHeaderRow === false) {
+            return;
+        }
+
+        if ($this->headerRow === [] || $this->headerRow === null) {
+            $this->headerRow = $headers;
+            return;
+        }
+
+        foreach ($headers as $header) {
+            if (!in_array($header, $this->headerRow, true)) {
+                $this->headerRow[] = $header;
+            }
+        }
+    }
+
+    /**
+     * @param array<int|string, string> $input
+     * @return string[]
+     */
+    private function preserveHeaderOrder(array $input): array
+    {
+        if ($this->useHeaderRow === false || $this->headerRow === null || $this->headerRow === []) {
+            return array_values($input);
+        }
+
+        $output = [];
+        foreach ($this->headerRow as $header) {
+            $output[] = $input[$header] ?? null;
+        }
+
+        return $output;
+    }
+
     private function parse(): void
     {
+        // Just an empty foreach to call our internal iterator.
         foreach ($this as $csvLine) {
         }
 

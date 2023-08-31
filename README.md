@@ -1,7 +1,18 @@
-Lazier: CSV Component
+Tiisy CSV Component
 ===================
 
-_Lazier CSV_ provides a simple way to handle CSV files.
+_Tiisy CSV_ provides a simple way to handle CSV files.
+
+
+Advantages
+----------
+
+* Can treat CSV files as associative arrays using header row logic (`useHeaderRow: true`)
+* Uses PHP's native `fgetcsv` and `fputcsv` 
+* No dependencies
+* Framework-agnostic
+* KISS, keep it simple and stupid (easy maintenance and contributing)
+* Well tested
 
 
 Installation
@@ -9,7 +20,7 @@ Installation
 
 Using Composer:
 
-    composer require lazier/csv
+    composer require tiisy/csv
 
 
 Usage
@@ -20,7 +31,7 @@ Example:
 ```php
 <?php
 
-use Lazier\Csv\CsvFile;
+use Tiisy\Csv\CsvFile;
 
 foreach(CsvFile::createFromString("id,name\n1,foo\n2,bar") as $row => $data) {
     echo $data['id'] . ': ' . $data['name'] . PHP_EOL;
@@ -38,7 +49,7 @@ Example:
 ```php
 <?php
 
-use Lazier\Csv\CsvFile;
+use Tiisy\Csv\CsvFile;
 
 foreach(CsvFile::createFromFile('example.csv', useHeaderRow: false) as $data) {
     echo $data[0] . ': ' . $data[1];
@@ -53,6 +64,7 @@ Ways to create an instance of `CsvFile`:
 * `createFromResource(resource $handle, <options>)` – Loads CSV file by given resource
 * `createFromString(string $input, <options>)` – Loads CSV file by given string
 * `createFromUrl(string $url, <options>)` – Loads CSV file by given URL
+* `createFromGoogleSpreadsheetId(string $spreadsheetId, <options>)` – Loads CSV file by given Google Spreadsheet ID
 
 Optional _options_ for creating an instance of `CsvFile`:
 
@@ -66,7 +78,7 @@ Optional _options_ for creating an instance of `CsvFile`:
 ```php
 <?php
 
-use Lazier\Csv\CsvFile;
+use Tiisy\Csv\CsvFile;
 
 $csvFile = CsvFile::createFromArray([
     ['id' => '1', 'name' => 'Nina'],
@@ -77,7 +89,4 @@ $csvFile->add(['id' => '3', 'name' => 'John']);
 
 // You can save your modified CSV file this way:
 $csvFile->saveAs('names.csv');
-
-// You can also output the CSV contents this way:
-echo $csvFile->asString();
 ```

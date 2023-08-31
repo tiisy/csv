@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Lazier\Csv;
+namespace Tiisy\Csv;
 
 use PHPUnit\Framework\TestCase;
 
@@ -82,6 +82,39 @@ class CsvFileTest extends TestCase
         self::assertEquals(['gender', 'male'], $data[2]);
     }
 
+    public function testItCanHandleEmptyCells(): void
+    {
+        $csvFile = CsvFile::createFromString(
+            'id;data' . PHP_EOL .
+            '1;hi' . PHP_EOL .
+            '2;""' . PHP_EOL .
+            '3;' . PHP_EOL .
+            '4' . PHP_EOL,
+            separator: ';',
+        );
+
+        $data = iterator_to_array($csvFile);
+
+        self::assertCount(4, $data);
+        self::assertEquals(['id' => '1', 'data' => 'hi'], $data[0]);
+        self::assertEquals(['id' => '2', 'data' => ''], $data[1]);
+        self::assertEquals(['id' => '3', 'data' => null], $data[2]);
+        self::assertEquals(['id' => '4', 'data' => null], $data[3]);
+    }
+
+    public function testItThrowsExceptionIfARowContainsMoreCellsThanHeaderRow(): void
+    {
+        self::expectException(CsvFileException::class);
+
+        $csvFile = CsvFile::createFromString(
+            'id,data' . PHP_EOL .
+            '1,foo' . PHP_EOL .
+            '2,foo,bar' . PHP_EOL,
+        );
+
+        $csvFile->asArray();
+    }
+
     public function testItCanParseOtherSeparators(): void
     {
         $csvFile = CsvFile::createFromString(
@@ -118,7 +151,7 @@ class CsvFileTest extends TestCase
 
     public function testItCanAddLines(): void
     {
-        $tempFile = tempnam(sys_get_temp_dir(), 'Lazier_test_csv_');
+        $tempFile = tempnam(sys_get_temp_dir(), 'tiisy_test_csv_');
 
         assert(is_string($tempFile));
 
@@ -130,6 +163,42 @@ class CsvFileTest extends TestCase
 
         self::assertFileExists($tempFile);
         self::assertEquals("id,name\n1,Anne\n2,Alex\n", file_get_contents($tempFile));
+
+        unlink($tempFile);
+    }
+
+    public function testItCanAddLinesAndPreserveKeyOrder(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'tiisy_test_csv_');
+
+        assert(is_string($tempFile));
+
+        $csvFile = CsvFile::create();
+
+        $csvFile->add(['id' => '1', 'name' => 'Anne']);
+        $csvFile->add(['name' => 'Billy', 'id' => '2']);
+        $csvFile->saveAs($tempFile);
+
+        self::assertFileExists($tempFile);
+        self::assertEquals("id,name\n1,Anne\n2,Billy\n", file_get_contents($tempFile));
+
+        unlink($tempFile);
+    }
+
+    public function testItCanAddLinesWithEmptyCells(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'tiisy_test_csv_');
+
+        assert(is_string($tempFile));
+
+        $csvFile = CsvFile::create();
+
+        $csvFile->add(['id' => '1', 'name' => 'Anne']);
+        $csvFile->add(['id' => '2', 'name' => 'John', 'surname' => 'Doe']);
+        $csvFile->saveAs($tempFile);
+
+        self::assertFileExists($tempFile);
+        self::assertEquals("id,name,surname\n1,Anne,\n2,John,Doe\n", file_get_contents($tempFile));
 
         unlink($tempFile);
     }
